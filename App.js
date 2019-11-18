@@ -14,8 +14,8 @@ import Ball from './components/Ball';
 import Deck from './components/Deck';
 
 const DATA = [
-  { id: 1, text: 'Card #1', uri: 'https://firebasestorage.googleapis.com/v0/b/photo-feed-ee809.appspot.com/o/user%2F6sCwnVzMulORIWXYMWmyB8enWUV2%2Fimg%2F7f6c8fac-6585-e822-47a1-8218-2002-1542.jpg?alt=media&token=55531f8e-12ee-4441-b463-dafff32a6419' },
-  { id: 2, text: 'Card #2', uri: 'https://firebasestorage.googleapis.com/v0/b/photo-feed-ee809.appspot.com/o/user%2F6sCwnVzMulORIWXYMWmyB8enWUV2%2Fimg%2F7f6c8fac-6585-e822-47a1-8218-2002-1542.jpg?alt=media&token=55531f8e-12ee-4441-b463-dafff32a6419' },
+  { id: 1, text: 'Card #1', uri: 'http://imgs.abduzeedo.com/files/paul0v2/unsplash/unsplash-09.jpg' },
+  { id: 2, text: 'Card #2', uri: 'http://imgs.abduzeedo.com/files/paul0v2/unsplash/unsplash-09.jpg' },
   { id: 3, text: 'Card #3', uri: 'http://imgs.abduzeedo.com/files/paul0v2/unsplash/unsplash-09.jpg' },
   { id: 4, text: 'Card #4', uri: 'http://imgs.abduzeedo.com/files/paul0v2/unsplash/unsplash-01.jpg' },
   { id: 5, text: 'Card #5', uri: 'http://imgs.abduzeedo.com/files/paul0v2/unsplash/unsplash-04.jpg' },
@@ -30,7 +30,7 @@ class App extends Component {
 
     this.state = {
       data: DATA,
-      animate: true,
+      shouldAnimate: true,
     }
   }
 
@@ -59,11 +59,11 @@ class App extends Component {
 
   reset() {
     this.setState({
-      animate: false,
+      shouldAnimate: false,
     }, () => this.setState({
       data: DATA.map(x => x),
     }, () => this.setState({
-      animate: true,
+      shouldAnimate: true,
     })))
   }
 
@@ -90,7 +90,7 @@ class App extends Component {
           <Deck 
             data={this.state.data}
             renderCard={this.renderCard}
-            animate={this.state.animate}
+            shouldAnimate={this.state.shouldAnimate}
             renderNoMoreCards={() => this.renderNoMoreCards(this)} 
           />
         </SafeAreaView>

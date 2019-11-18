@@ -1,4 +1,9 @@
-import React, { Component, useEffect, useState } from 'react';
+import React, { 
+  Component, 
+  useEffect, 
+  useState, 
+  useRef, 
+} from 'react';
 import { 
   View, 
   StyleSheet,
@@ -9,158 +14,161 @@ import {
   UIManager,
   LayoutAnimation,
 } from 'react-native';
-import { thisExpression } from '@babel/types';
 
 const win = Dimensions.get('window');
 const SCREEN_WIDTH = win.width;
 const SWIPE_THRESHOLD = 0.35 * SCREEN_WIDTH;
 const SWIPE_OUT_DURATION = 150;
 
-class Deck extends Component {
-  static defaultProps = {
-    onSwipeRight() {},
-    onSwipeLeft() {},
+function usePrevious(value, initialValue) {
+  const ref = useRef();
+  useEffect(() => {
+    ref.current = value;
+  });
+  if (ref.current === undefined && initialValue !== undefined) {
+    return initialValue;
   }
+  return ref.current;
+}
 
-  constructor(props) {
-    super(props);
+if (UIManager.setLayoutAnimationEnabledExperimental) { 
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
-    const position = new Animated.ValueXY();
+const Deck = ({data, shouldAnimate, renderCard, renderNoMoreCards}) => {
+  const [position] = useState(new Animated.ValueXY());
+  const [index, setIndex] = useState(0);
+  const [prev] = usePrevious(data, 'asdf');
 
-    const panResponder = PanResponder.create({
+  const [panResponder] = useState(
+    PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onPanResponderMove: (event, gesture) => {
-        this.state.position.setValue({x: gesture.dx, y: gesture.dy})
+      onPanResponderMove: (e, gesture) => {
+        position.setValue({x: gesture.dx, y: gesture.dy})
       },
-      onPanResponderRelease: (event, gesture) => {
+      onPanResponderRelease: (e, gesture) => {
         if (gesture.dx > SWIPE_THRESHOLD) {
-          console.log('swipe right!')
-          this.forceSwipe('right');
+          finishSwipe('right');
         } else if (gesture.dx < -SWIPE_THRESHOLD) {
-          console.log('swipe left');
-          this.forceSwipe('left');
+          finishSwipe('left');
         } else {
-          this.resetPosition();
+          resetPosition();
         }
       },
-    });
-    this.state = {
-      panResponder, 
-      position, 
-      index: 0,
-    };
-  }
+    })
+  );
 
-  componentDidUpdate(prevProps) {
-    console.log('******', prevProps, '\n', this.props);
-    if (prevProps.data !== this.props.data) {
-      console.log('resetting to 0');
-      this.setState({index: 0});
+  useEffect(() => {
+    if (prev.data !== data) {
+      setIndex(0);
     }
-    if (UIManager.setLayoutAnimationEnabledExperimental) { 
-      UIManager.setLayoutAnimationEnabledExperimental(true);
-    }
-    if (prevProps.animate && this.props.animate) {
-      LayoutAnimation.configureNext({
-        duration: 300,
-        update: {
-          type: LayoutAnimation.Types.spring,
-          springDamping: 0.75
-        }
-      })
-    } else {
-      LayoutAnimation.configureNext({})
-    }
-  }
+    console.log(shouldAnimate);
+    // if (shouldAnimate) {
+    //   LayoutAnimation.configureNext({
+    //     duration: 1000,
+    //     update: {
+    //       type: LayoutAnimation.Types.spring,
+    //       springDamping: 0.1
+    //     }
+    //   })
+    // } else {
+      // LayoutAnimation.configureNext({})
+    // }
+  }, [data]);
 
-  forceSwipe(direction) {
+  finishSwipe = (direction) => {
     const x = (direction === 'right' ? 
       SCREEN_WIDTH : -SCREEN_WIDTH) * 1.75;
-    Animated.timing(this.state.position, {
+    Animated.timing(position, {
       toValue: {x, y: 0},
       duration: SWIPE_OUT_DURATION,
-    }).start(() => this.onSwipeComplete());
+    }).start(() => onSwipeComplete());
   }
 
-  onSwipeComplete(direction) {
-    const { onSwipeLeft, onSwipeRight, data } = this.props;
-    const item = data[this.state.index];
-
-    direction === 'right' ? 
-      onSwipeRight(item) : 
-      onSwipeLeft(item);
-
-    this.state.position.setValue({x: 0, y: 0});
-    // let nextX = data[this.state.index + 1]
-    // console.log(nextX);
-    Animated.timing(this.state.position, {
-      toValue: {x: 0, y: 0},
-      duration: 300,
-
-    }).start();
-    this.setState({
-      index: this.state.index + 1
-    });
+  onSwipeComplete = (direction) => {
+    const item = data[index];
+    // direction === 'right' ? 
+    //   onSwipeRight(item) : onSwipeLeft(item);
+    LayoutAnimation.configureNext({
+      duration: 1000,
+      update: {
+        type: LayoutAnimation.Types.spring,
+        springDamping: 0.75
+      }
+    })
+    position.setValue({x: 0, y: 0});
+    // Animated.timing(position, {
+    //   toValue: {x: 0, y: 0},
+    //   duration: 300,
+    // }).start();
+    setIndex(index + 1);
   }
 
-  resetPosition() {
-    Animated.spring(this.state.position, {
+  resetPosition = () => {
+    Animated.spring(position, {
       toValue: {x: 0, y: 0}
     }).start();
   }
 
-  getCardStyle() {
-    const { position } = this.state;
-    const rotate = position.x.interpolate({
-      inputRange: [-SCREEN_WIDTH * 2, 0, SCREEN_WIDTH * 2],
+  topCardStyle = () => {
+    const toRotate = position.x.interpolate({
+      inputRange: [-SCREEN_WIDTH * 3, 0, SCREEN_WIDTH * 3],
       rotate: '0deg',
       outputRange: ['-90deg', '0deg', '90deg'],
     });
-
     return {
-      ...this.state.position.getLayout(),
-      transform: [{rotate}],
+      ...position.getLayout(),
+      transform: [
+        {rotate: toRotate}
+      ],
     }
   }
 
-  renderCards() {
-    if (this.state.index >= this.props.data.length) {
-      return this.props.renderNoMoreCards();
+  renderCards = () => {
+    // No more cards
+    if (index >= data.length) {
+      return renderNoMoreCards();
     }
-    return this.props.data.map((item, i) => {
-      if (i < this.state.index) { return null; }
-      if (i === this.state.index) {
+    const cards = data.map((item, i) => {
+      // Don't render already swiped
+      if (i < index) { return null; }
+      // Render top card
+      if (i === index) {
         return (
           <Animated.View 
             key={item.id}
-            style={[this.getCardStyle(), styles.cardStyle]}
-            {...this.state.panResponder.panHandlers}
+            style={[topCardStyle(), styles.cardStyle]}
+            {...panResponder.panHandlers}
           >
-            {this.props.renderCard(item)}
+            {renderCard(item)}
           </Animated.View>
         );
+      }
+      const messyStyle = {
+        top: 10 * (i - index),
+        transform: [{
+          rotate: getRandomArbitrary(-1, 1) + 'deg'
+        }]
       }
       return (
         <Animated.View 
           key={item.id} 
-          style={[styles.cardStyle, 
-            // {top: 10 * (i - this.state.index)},
-            {transform: [{rotate: getRandomArbitrary(-1, 1) + 'deg'}]}]}
+          style={[styles.cardStyle, messyStyle]}
         >
-          {this.props.renderCard(item)}
+          {renderCard(item)}
         </Animated.View>
-      )
-    }).reverse();
+      )              
+    })
+
+    return cards.reverse();
   }
 
-  render() {
-    return (
-      <View>
-        {this.renderCards()}
-      </View>
-    )
-  }
-}
+  return (
+    <View>
+      {renderCards()}
+    </View>
+  )
+};
 
 const getRandomArbitrary = (min, max) => {
   return (Math.random() * (max - min) + min).toFixed(1);
