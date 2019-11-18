@@ -35,7 +35,7 @@ if (UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const Deck = ({data, shouldAnimate, renderCard, renderNoMoreCards}) => {
+const Deck = ({data, renderCard, renderNoMoreCards}) => {
   const [position] = useState(new Animated.ValueXY());
   const [index, setIndex] = useState(0);
   const [prev] = usePrevious(data, 'asdf');
@@ -62,18 +62,6 @@ const Deck = ({data, shouldAnimate, renderCard, renderNoMoreCards}) => {
     if (prev.data !== data) {
       setIndex(0);
     }
-    console.log(shouldAnimate);
-    // if (shouldAnimate) {
-    //   LayoutAnimation.configureNext({
-    //     duration: 1000,
-    //     update: {
-    //       type: LayoutAnimation.Types.spring,
-    //       springDamping: 0.1
-    //     }
-    //   })
-    // } else {
-      // LayoutAnimation.configureNext({})
-    // }
   }, [data]);
 
   finishSwipe = (direction) => {
@@ -90,17 +78,17 @@ const Deck = ({data, shouldAnimate, renderCard, renderNoMoreCards}) => {
     // direction === 'right' ? 
     //   onSwipeRight(item) : onSwipeLeft(item);
     LayoutAnimation.configureNext({
-      duration: 1000,
+      duration: 300,
       update: {
         type: LayoutAnimation.Types.spring,
         springDamping: 0.75
       }
     })
     position.setValue({x: 0, y: 0});
-    // Animated.timing(position, {
-    //   toValue: {x: 0, y: 0},
-    //   duration: 300,
-    // }).start();
+    Animated.timing(position, {
+      toValue: {x: 0, y: 0},
+      duration: 300,
+    }).start();
     setIndex(index + 1);
   }
 
