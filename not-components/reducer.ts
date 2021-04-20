@@ -1,4 +1,4 @@
-import {createAction, createReducer} from "@reduxjs/toolkit";
+import {createAction, createReducer, createSlice} from "@reduxjs/toolkit";
 
 export const incIndex = createAction('INC_INDEX');
 export const refreshData = createAction('REFRESH_DATA');
@@ -25,6 +25,7 @@ export enum TouchedCardEnd {
 
 export enum SwipeDirection {
   RIGHT = 1,
+  NONE = 0,
   LEFT = -1
 }
 
@@ -40,31 +41,20 @@ export const initialState: MainState = {
   rotationDir: TouchedCardEnd.TOP
 }
 
-export const mainReducer = createReducer(initialState, (builder) => {
-  console.log("reducing");
-  builder
-    .addCase(incIndex, (state, action) => {
-      return {
+export const mainReducer = createReducer(
+  initialState,
+  builder => builder
+    .addCase(incIndex, (state) => ({
         ...state,
         index: state.index + 1
-      }
-    })
-    .addCase(refreshData, (state, action) => {
-      return {
+    }))
+    .addCase(refreshData, () => ({
+      ...initialState
+    }))
+    .addCase(changeRotateEnd, (state, { payload }) => ({
         ...state,
-        data: [...DATA],
-        index: 0
-      }
-    })
-    .addCase(changeRotateEnd, (state, action) => {
-      return {
-        ...state,
-        rotationDir: action.payload
-      }
-    })
-    .addDefaultCase((state, action) => {
-      return state;
-    })
-})
-
+        rotationDir: payload
+    }))
+    .addDefaultCase((state) => state)
+)
 

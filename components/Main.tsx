@@ -1,29 +1,21 @@
 import React from "react";
 import {
-  refreshData,
+  changeRotateEnd,
   ICardData,
   incIndex,
   MainState,
-  TouchedCardEnd,
-  changeRotateEnd,
-  SwipeDirection
+  refreshData,
+  SwipeDirection,
+  TouchedCardEnd
 } from "../not-components/reducer";
-import {
-  Animated,
-  ImageBackground,
-  PanResponder,
-  PanResponderGestureState,
-  SafeAreaView,
-  StatusBar,
-  Text,
-  UIManager,
-  View
-} from "react-native";
+import {Animated, ImageBackground, PanResponder, PanResponderGestureState, Text, UIManager, View} from "react-native";
 import {
   POINT_ORIGIN,
   ROTATE_SWITCH_HEIGHT,
-  SCREEN_WIDTH,
+  SWIPE_FINISH_WIDTH,
+  SWIPE_INPUT_MAX_ABS,
   SWIPE_OUT_DURATION,
+  SWIPE_OUTPUT_MAX_ABS,
   SWIPE_THRESHOLD
 } from "../not-components/constants";
 import {Button, Card} from "react-native-elements";
@@ -35,47 +27,34 @@ if (UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-const SWIPE_INPUT_MAX = SCREEN_WIDTH * 3;
-const SWIPE_OUTPUT_MAX = 45;
-
-
 class Main extends React.Component<IMainProps, MainState> {
   position = new Animated.ValueXY();
 
   panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => true,
-    onPanResponderMove: (_: any, gesture: PanResponderGestureState) => {
-      console.log("move");
-      const end = gesture.y0 <= ROTATE_SWITCH_HEIGHT ?
-        TouchedCardEnd.TOP :
-        TouchedCardEnd.BOTTOM;
-      console.log(gesture.y0, ROTATE_SWITCH_HEIGHT, end);
-      changeRotateEnd(end);
-      this.position.setValue({x: gesture.dx, y: gesture.dy})
-    },
-    onPanResponderRelease: (_: any, gesture: PanResponderGestureState) => {
-      if (gesture.dx > SWIPE_THRESHOLD) {
-        this.finishSwipe(SwipeDirection.RIGHT);
-      }
-      else if (gesture.dx < -SWIPE_THRESHOLD) {
-        this.finishSwipe(SwipeDirection.LEFT);
-      }
-      else {
-        Animated.spring(this.position, {
-          useNativeDriver: false,
-          toValue: POINT_ORIGIN,
-        }).start();
-      }
-    }
+    onPanResponderMove: this.onMove.bind(this),
+    onPanResponderRelease: this.onRelease.bind(this),
   });
 
-  finishSwipe = (direction: number) => {
-    const absX = SCREEN_WIDTH * 1.75;
-    const x = absX * direction;
+  onRelease(_: any, gesture: PanResponderGestureState) {
+    let dir = SwipeDirection.NONE;
+    if (gesture.dx > SWIPE_THRESHOLD) {
+      dir = SwipeDirection.RIGHT;
+    }
+    if (gesture.dx < -SWIPE_THRESHOLD) {
+      dir = SwipeDirection.LEFT;
+    }
+    if (dir === SwipeDirection.NONE) {
+      Animated.spring(this.position, {
+        useNativeDriver: false,
+        toValue: POINT_ORIGIN,
+      }).start();
+      return;
+    }
     Animated.timing(this.position, {
       useNativeDriver: false,
       toValue: {
-        x,
+        x: SWIPE_FINISH_WIDTH * dir,
         y: 0
       },
       duration: SWIPE_OUT_DURATION
@@ -85,22 +64,28 @@ class Main extends React.Component<IMainProps, MainState> {
     });
   }
 
+  onMove(_: any, gesture: PanResponderGestureState) {
+    const end = gesture.y0 <= ROTATE_SWITCH_HEIGHT ?
+        TouchedCardEnd.TOP :
+        TouchedCardEnd.BOTTOM;
+      if (this.props.rotationDir != end) {
+      this.props.changeRotateEnd(end);
+    }
+    this.position.setValue({x: gesture.dx, y: gesture.dy})
+  }
+
   topCardStyle = () => {
-    console.log('set topcardstyle');
-    const toRotate = this.position.x.interpolate({
-      inputRange: [
-        -SCREEN_WIDTH * 3, 0, SCREEN_WIDTH * 3
-      ],
-      outputRange: [
-        -this.props.rotationDir * 45 + 'deg',
-        '0deg',
-        this.props.rotationDir * 45 + 'deg'
-      ],
-    });
+    const inputRange = [-1, 0, 1]
+      .map(n => n * SWIPE_INPUT_MAX_ABS);
+    const outputRange = [-1, 0, 1]
+      .map(n => `${n * this.props.rotationDir * SWIPE_OUTPUT_MAX_ABS}deg`);
     return {
       ...this.position.getLayout(),
       transform: [{
-        rotate: toRotate
+        rotate: this.position.x.interpolate({
+          inputRange,
+          outputRange,
+        })
       }],
     }
   }
@@ -116,11 +101,10 @@ class Main extends React.Component<IMainProps, MainState> {
           <View style={{ alignItems: 'center'}}>
             <Text>There are no more chicks in your area.</Text>
           </View>
-
           <Button
             style={Styles.getMoreButtonStyle}
             title='Get more!'
-            onPress={this.props.dataRefresh}
+            onPress={() => this.props.refreshData()}
           />
         </Card>
       )
@@ -132,7 +116,7 @@ class Main extends React.Component<IMainProps, MainState> {
       }
 
       // Render top card
-      let cs = [];
+      let cs;
       let ph = {};
 
       if (i === index) {
@@ -142,7 +126,6 @@ class Main extends React.Component<IMainProps, MainState> {
         cs = [Styles.cardStyle, {top: 0}]
       }
 
-      console.log("const cards");
       return (
         <Animated.View key={item.id} style={cs} {...ph}>
           <ImageBackground source={{uri: item.uri}} style={Styles.bigImage}>
@@ -158,16 +141,10 @@ class Main extends React.Component<IMainProps, MainState> {
   }
 
   render() {
-    console.log("rendering");
     return (
-      <>
-        <StatusBar barStyle="dark-content"/>
-        <SafeAreaView style={Styles.container}>
-          <View>
-            {this.renderCards()}
-          </View>
-        </SafeAreaView>
-      </>
+      <View>
+        {this.renderCards()}
+      </View>
     )
   }
 }
@@ -179,9 +156,9 @@ const mapStateToProps = ({main: {data, index, rotationDir}}: RootState) => ({
 });
 
 const mapDispatchToProps = {
-  incIndex: incIndex,
-  dataRefresh: refreshData,
-  changeRotateEnd: changeRotateEnd
+  incIndex,
+  refreshData,
+  changeRotateEnd
 };
 
 type StateProps = ReturnType<typeof mapStateToProps>;
