@@ -1,5 +1,13 @@
 import React from "react";
-import {refreshData, ICardData, incIndex, MainState, RotateEnd, changeRotateEnd} from "../not-components/reducer";
+import {
+  refreshData,
+  ICardData,
+  incIndex,
+  MainState,
+  TouchedCardEnd,
+  changeRotateEnd,
+  SwipeDirection
+} from "../not-components/reducer";
 import {
   Animated,
   ImageBackground,
@@ -38,25 +46,26 @@ class Main extends React.Component<IMainProps, MainState> {
     onStartShouldSetPanResponder: () => true,
     onPanResponderMove: (_: any, gesture: PanResponderGestureState) => {
       console.log("move");
-      const end = gesture.y0 > ROTATE_SWITCH_HEIGHT ?
-        RotateEnd.TOP :
-        RotateEnd.BOTTOM;
+      const end = gesture.y0 <= ROTATE_SWITCH_HEIGHT ?
+        TouchedCardEnd.TOP :
+        TouchedCardEnd.BOTTOM;
+      console.log(gesture.y0, ROTATE_SWITCH_HEIGHT, end);
       changeRotateEnd(end);
       this.position.setValue({x: gesture.dx, y: gesture.dy})
     },
     onPanResponderRelease: (_: any, gesture: PanResponderGestureState) => {
       if (gesture.dx > SWIPE_THRESHOLD) {
-        this.finishSwipe(1);
-        return;
+        this.finishSwipe(SwipeDirection.RIGHT);
       }
-      if (gesture.dx < -SWIPE_THRESHOLD) {
-        this.finishSwipe(-1);
-        return;
+      else if (gesture.dx < -SWIPE_THRESHOLD) {
+        this.finishSwipe(SwipeDirection.LEFT);
       }
-      Animated.spring(this.position, {
-        useNativeDriver: false,
-        toValue: POINT_ORIGIN,
-      }).start();
+      else {
+        Animated.spring(this.position, {
+          useNativeDriver: false,
+          toValue: POINT_ORIGIN,
+        }).start();
+      }
     }
   });
 
@@ -72,11 +81,12 @@ class Main extends React.Component<IMainProps, MainState> {
       duration: SWIPE_OUT_DURATION
     }).start(() => {
       this.position.setValue(POINT_ORIGIN);
-      this.props.indexChange();
+      this.props.incIndex();
     });
   }
 
   topCardStyle = () => {
+    console.log('set topcardstyle');
     const toRotate = this.position.x.interpolate({
       inputRange: [
         -SCREEN_WIDTH * 3, 0, SCREEN_WIDTH * 3
@@ -89,7 +99,9 @@ class Main extends React.Component<IMainProps, MainState> {
     });
     return {
       ...this.position.getLayout(),
-      transform: [{rotate: toRotate}],
+      transform: [{
+        rotate: toRotate
+      }],
     }
   }
 
@@ -167,9 +179,9 @@ const mapStateToProps = ({main: {data, index, rotationDir}}: RootState) => ({
 });
 
 const mapDispatchToProps = {
-  indexChange: incIndex,
+  incIndex: incIndex,
   dataRefresh: refreshData,
-  changeRotateEnd
+  changeRotateEnd: changeRotateEnd
 };
 
 type StateProps = ReturnType<typeof mapStateToProps>;

@@ -18,21 +18,26 @@ export const DATA: ICardData[] = [
 ////
 // Main App
 ////
-export enum RotateEnd {
+export enum TouchedCardEnd {
+  TOP = 1,
   BOTTOM = -1,
-  TOP = 1
+}
+
+export enum SwipeDirection {
+  RIGHT = 1,
+  LEFT = -1
 }
 
 export interface MainState {
   index: number,
   data: ICardData[],
-  rotationDir: RotateEnd
+  rotationDir: TouchedCardEnd
 }
 
 export const initialState: MainState = {
   index: 0,
   data: [...DATA],
-  rotationDir: RotateEnd.TOP
+  rotationDir: TouchedCardEnd.TOP
 }
 
 export const mainReducer = createReducer(initialState, (builder) => {
