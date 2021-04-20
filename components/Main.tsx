@@ -77,17 +77,19 @@ class Main extends React.Component<IMainProps, MainState> {
   }
 
   topCardStyle = () => {
-    const rotate = this.position.x.interpolate({
-      inputRange: [-SCREEN_WIDTH * 3, 0, SCREEN_WIDTH * 3],
-      outputRange: [`${this.props.rotationDir * -45}deg`, '0deg', `${this.props.rotationDir * 45}deg`],
+    const toRotate = this.position.x.interpolate({
+      inputRange: [
+        -SCREEN_WIDTH * 3, 0, SCREEN_WIDTH * 3
+      ],
+      outputRange: [
+        -this.props.rotationDir * 45 + 'deg',
+        '0deg',
+        this.props.rotationDir * 45 + 'deg'
+      ],
     });
     return {
       ...this.position.getLayout(),
-      transform: [
-        {
-          rotate
-        }
-      ],
+      transform: [{rotate: toRotate}],
     }
   }
 
