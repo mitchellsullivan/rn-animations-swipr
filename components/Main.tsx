@@ -38,12 +38,15 @@ class Main extends React.Component<IMainProps, MainState> {
 
   onRelease(_: any, gesture: PanResponderGestureState) {
     let dir = SwipeDirection.NONE;
+
     if (gesture.dx > SWIPE_THRESHOLD) {
       dir = SwipeDirection.RIGHT;
     }
+
     if (gesture.dx < -SWIPE_THRESHOLD) {
       dir = SwipeDirection.LEFT;
     }
+
     if (dir === SwipeDirection.NONE) {
       Animated.spring(this.position, {
         useNativeDriver: false,
@@ -51,6 +54,7 @@ class Main extends React.Component<IMainProps, MainState> {
       }).start();
       return;
     }
+
     Animated.timing(this.position, {
       useNativeDriver: false,
       toValue: {
@@ -103,7 +107,7 @@ class Main extends React.Component<IMainProps, MainState> {
           </View>
           <Button
             style={Styles.getMoreButtonStyle}
-            title='Get more!'
+            title='Start Over!'
             onPress={() => this.props.refreshData()}
           />
         </Card>
