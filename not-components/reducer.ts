@@ -10,9 +10,9 @@ export interface ICardData {
   uri: string;
 }
 export const DATA: ICardData[] = [
-  { id: 1, text: 'Card #1', uri: 'https://source.unsplash.com/random/?hen', },
-  { id: 2, text: 'Card #2', uri: 'https://source.unsplash.com/random/?hen', },
-  { id: 3, text: 'Card #3', uri: 'https://source.unsplash.com/random/?hen', },
+  { id: 1, text: 'Chick #1', uri: 'https://source.unsplash.com/random/?hen', },
+  { id: 2, text: 'Chick #2', uri: 'https://source.unsplash.com/random/?hen', },
+  { id: 3, text: 'Chick #3', uri: 'https://source.unsplash.com/random/?hen', },
 ];
 
 ////
